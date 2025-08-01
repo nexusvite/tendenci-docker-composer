@@ -22,10 +22,10 @@ sudo chown -R tendenci: /var/log/mysite
 sudo chown -R tendenci: /var/www/mysite/media/
 
 # Only create settings.py if missing
-if [ ! -f "conf/settings.py" ]; then
+if [ ! -f "/var/log/mysite/conf/settings.py" ]; then
   echo "conf/settings.py not found. Creating it..."
   mkdir -p conf
-  cat > conf/settings.py << EOF
+  cat > /var/log/mysite/conf/settings.py << EOF
 import os
 
 DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'

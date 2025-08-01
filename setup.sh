@@ -43,6 +43,10 @@ if [ ! -f "/var/www/mysite/conf/settings.py" ]; then
     echo "Warning: Could not find juniper theme in $TENDENCI_PATH/themes/"
   fi
   
+  # Ensure conf directory exists
+  echo "Creating conf directory if it doesn't exist..."
+  mkdir -p /var/www/mysite/conf
+  
   # Create settings file with environment variables
   cat > /var/www/mysite/conf/settings.py << EOF
 import os

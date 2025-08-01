@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
 # Create directories with proper permissions
 RUN mkdir -p /srv/venv_tendenci && \
     mkdir -p /var/www/ && \
-    mkdir -p /var/log/mysite && \
+    mkdir -p /var/log/ && \
     chmod -R 755 /var/www && \
     chmod -R 755 /var/log
 
@@ -31,7 +31,7 @@ RUN useradd -m -u 1000 tendenci && \
     echo "tendenci ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # Set ownership
-RUN chown -R tendenci: /var/www/ /var/log/mysite /srv/venv_tendenci
+RUN chown -R tendenci: /var/www/ /var/log/ /srv/venv_tendenci
 
 # Set working directory
 WORKDIR /var/www/

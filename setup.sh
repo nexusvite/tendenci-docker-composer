@@ -17,9 +17,10 @@ sudo chown -R tendenci: /var/www/
 # Check if this is the first run
 if [ ! -f "/var/www/mysite/conf/settings.py" ]; then
   echo "First run detected. Setting up Tendenci..."
-
+  echo pwd
   echo "Creating Tendenci project..."
   cd /var/www/
+  echo pwd
   tendenci startproject mysite
 
   # # Create Tendenci project if needed

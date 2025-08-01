@@ -5,7 +5,7 @@ echo "Starting Tendenci setup..."
 
 # Wait for database to be ready
 echo "Waiting for database to be ready..."
-until pg_isready -h $DB_HOST -U $DB_USER; do
+until pg_isready -h "$DB_HOST" -U "$DB_USER"; do
   echo "Waiting for database..."
   sleep 2
 done
@@ -13,69 +13,53 @@ done
 # Fix permissions on mounted volumes
 echo "Fixing permissions on mounted volumes..."
 sudo chown -R tendenci: /var/www/
-#sudo chown -R tendenci: /var/log/
 
-# sudo chown -R tendenci: /var/www/mysite
-# sudo chown -R tendenci: /var/log/mysite
-
-# Check if this is the first run by checking for settings.py
+# Check if this is the first run
 if [ ! -f "/var/www/mysite/conf/settings.py" ]; then
   echo "First run detected. Setting up Tendenci..."
-  
-  # Change to the correct directory
-  cd /var/www/
-  # cd /var/www/mysite
-  
-  # Create Tendenci project only if mysite directory doesn't exist or is empty
-  # if [ ! -d "/var/www/mysite/mysite" ] || [ -z "$(ls -A /var/www/mysite/mysite)" ]; then
-  #   echo "Creating Tendenci project..."
-  #   tendenci startproject mysite
-  # else
-  #   echo "Tendenci project already exists, skipping creation..."
-  # fi
-  
-  # Change to the project directory where manage.py is located
-  echo "Creating Tendenci project..."
-  tendenci startproject mysite
-  cd /var/www/mysite
-  
-  # Create log directory
-  # mkdir -p /var/log/mysite
-  sudo mkdir /var/log/mysite
-  sudo chown -R tendenci: /var/www/
-  sudo chown -R tendenci: /var/www/mysite/media/ 
 
-  # Copy juniper theme with proper permissions
+  cd /var/www/
+
+  # Create Tendenci project only if it hasn't been created
+  if [ ! -f "/var/www/mysite/manage.py" ]; then
+    echo "Creating Tendenci project..."
+    tendenci startproject mysite
+  fi
+
+  # Handle nested manage.py if incorrectly placed
+  if [ -f "/var/www/mysite/mysite/manage.py" ]; then
+    mv /var/www/mysite/mysite/manage.py /var/www/mysite/
+  fi
+
+  cd /var/www/mysite
+
+  # Create log directory
+  sudo mkdir -p /var/log/mysite
+  sudo chown -R tendenci: /var/log/mysite
+  sudo chown -R tendenci: /var/www/mysite/media/
+
+  # Copy juniper theme
   echo "Copying juniper theme..."
   mkdir -p /var/www/mysite/themes/juniper
-  # Find the correct path to the tendenci package
-  TENDENCI_PATH=$(python -c "import tendenci; import os; print(os.path.dirname(tendenci.__file__))")
+  TENDENCI_PATH=$(python -c "import tendenci, os; print(os.path.dirname(tendenci.__file__))")
   if [ -d "$TENDENCI_PATH/themes/juniper" ]; then
-    cp -r "$TENDENCI_PATH/themes/juniper"/* /var/www/mysite/themes/juniper/
+    cp -r "$TENDENCI_PATH/themes/juniper/"* /var/www/mysite/themes/juniper/
   else
-    echo "Warning: Could not find juniper theme in $TENDENCI_PATH/themes/"
+    echo "Warning: Juniper theme not found in $TENDENCI_PATH/themes/"
   fi
-  
-  # Ensure conf directory exists
-  echo "Creating conf directory if it doesn't exist..."
-  # mkdir -p /var/www/mysite/conf
-  
-  # Create settings file with environment variables
+
+  # Create conf directory and settings
+  echo "Creating conf/settings.py..."
+  mkdir -p /var/www/mysite/conf
   cat > /var/www/mysite/conf/settings.py << EOF
 import os
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
-
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY', 'your-default-secret-key-change-in-production')
-
-# SECURITY WARNING: keep the site settings key used in production secret!
 SITE_SETTINGS_KEY = os.environ.get('SITE_SETTINGS_KEY', 'your-default-site-settings-key-change-in-production')
 
 ALLOWED_HOSTS = ['*']
 
-# Database
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -88,10 +72,8 @@ DATABASES = {
 }
 
 TIME_ZONE = 'UTC'
-
 USE_TZ = True
 
-# Logging
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -111,18 +93,14 @@ LOGGING = {
     },
 }
 
-# Media files
 MEDIA_ROOT = '/var/www/mysite/media/'
 MEDIA_URL = '/media/'
 
-# Static files
 STATIC_ROOT = '/var/www/mysite/static/'
 STATIC_URL = '/static/'
 
-# Theme directory
 THEMES_DIR = '/var/www/mysite/themes/'
 
-# Whoosh index
 HAYSTACK_CONNECTIONS = {
     'default': {
         'ENGINE': 'haystack.backends.whoosh_backend.WhooshEngine',
@@ -135,26 +113,32 @@ EOF
   echo "Setting permissions..."
   chmod -R 755 /var/www/mysite/media/
   chmod -R 755 /var/www/mysite/themes/
-  chown -R tendenci: /var/log/mysite
-  cd /var/www/mysite/
-  # Initialize database following official documentation
-  echo "Initializing database..."
-  python manage.py migrate
-  python manage.py deploy
-  python manage.py load_tendenci_defaults
-  python manage.py update_dashboard_stats
-  python manage.py rebuild_index --noinput
-  
-  # Set site URL
-  python manage.py set_setting site global siteurl 'http://localhost:8082'
-  
-  echo "Tendenci setup completed!"
+
+  # Run initial migrations and setup
+  if [ -f "manage.py" ]; then
+    echo "Initializing database..."
+    python manage.py migrate
+    python manage.py deploy
+    python manage.py load_tendenci_defaults
+    python manage.py update_dashboard_stats
+    python manage.py rebuild_index --noinput
+    python manage.py set_setting site global siteurl 'http://localhost:8082'
+    echo "Tendenci setup completed!"
+  else
+    echo "Error: manage.py not found. Setup failed."
+    exit 1
+  fi
 else
-  echo "Tendenci already set up. Running any pending migrations..."
+  echo "Tendenci already set up. Running pending migrations..."
   cd /var/www/mysite
-  python manage.py migrate
-  python manage.py deploy
-  echo "Updates completed!"
+  if [ -f "manage.py" ]; then
+    python manage.py migrate
+    python manage.py deploy
+    echo "Updates completed!"
+  else
+    echo "Error: manage.py not found in existing setup."
+    exit 1
+  fi
 fi
 
 echo "Setup process finished."

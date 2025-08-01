@@ -31,6 +31,7 @@ services:
       - SITE_SETTINGS_KEY=your-site-settings-key-here-change-in-production
       - DEBUG=True
     volumes:
+      - tendenci_project:/var/www/mysite
       - tendenci_media:/var/www/mysite/media
       - tendenci_themes:/var/www/mysite/themes
       - tendenci_logs:/var/log/mysite
@@ -54,6 +55,7 @@ services:
       - DB_USER=tendenci
       - DB_PASS=tendenci
     volumes:
+      - tendenci_project:/var/www/mysite
       - tendenci_media:/var/www/mysite/media
       - tendenci_themes:/var/www/mysite/themes
       - tendenci_logs:/var/log/mysite
@@ -74,6 +76,7 @@ services:
       - "8082:8082"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - tendenci_project:/var/www/mysite
       - tendenci_media:/var/www/mysite/media
       - tendenci_static:/var/www/mysite/static
     networks:
@@ -87,6 +90,7 @@ volumes:
   tendenci_logs:
   tendenci_whoosh:
   tendenci_static:
+  tendenci_project:
 
 networks:
   tendenci_network:

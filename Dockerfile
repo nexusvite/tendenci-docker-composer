@@ -37,8 +37,12 @@ WORKDIR /var/www
 # Switch to tendenci user before project creation
 USER tendenci
 
-# Create Tendenci project
-RUN tendenci startproject mysite
+# Create Tendenci project if it doesn't exist
+RUN if [ ! -d "/var/www/mysite" ] || [ -z "$(ls -A /var/www/mysite)" ]; then \
+      tendenci startproject mysite; \
+    else \
+      echo "Tendenci project already exists, skipping creation"; \
+    fi
 
 # Set working directory to the newly created site
 WORKDIR /var/www/mysite

@@ -31,8 +31,9 @@ if [ ! -f "/var/www/mysite/conf/settings.py" ]; then
     echo "mysite directory already exists and is not empty. Skipping project creation."
   fi
 
-  # Fix incorrect nesting if needed
+  # Rescue nested manage.py if needed
   if [ -f "/var/www/mysite/mysite/manage.py" ]; then
+    echo "Fixing nested manage.py..."
     mv /var/www/mysite/mysite/manage.py /var/www/mysite/
   fi
 
@@ -130,7 +131,7 @@ EOF
     python manage.py set_setting site global siteurl 'http://localhost:8082'
     echo "Tendenci setup completed!"
   else
-    echo "Error: manage.py not found. Setup failed."
+    echo "Error: manage.py not found even after rescue. Setup failed."
     exit 1
   fi
 else

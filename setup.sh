@@ -12,30 +12,39 @@ done
 
 # Fix permissions on mounted volumes
 echo "Fixing permissions on mounted volumes..."
-sudo chown -R tendenci: /var/www/mysite
-sudo chown -R tendenci: /var/log/mysite
+sudo chown -R tendenci: /var/www/
+#sudo chown -R tendenci: /var/log/
+
+# sudo chown -R tendenci: /var/www/mysite
+# sudo chown -R tendenci: /var/log/mysite
 
 # Check if this is the first run by checking for settings.py
 if [ ! -f "/var/www/mysite/conf/settings.py" ]; then
   echo "First run detected. Setting up Tendenci..."
   
   # Change to the correct directory
-  cd /var/www/mysite
+  cd /var/www/
+  # cd /var/www/mysite
   
   # Create Tendenci project only if mysite directory doesn't exist or is empty
-  if [ ! -d "/var/www/mysite/mysite" ] || [ -z "$(ls -A /var/www/mysite/mysite)" ]; then
-    echo "Creating Tendenci project..."
-    tendenci startproject mysite
-  else
-    echo "Tendenci project already exists, skipping creation..."
-  fi
+  # if [ ! -d "/var/www/mysite/mysite" ] || [ -z "$(ls -A /var/www/mysite/mysite)" ]; then
+  #   echo "Creating Tendenci project..."
+  #   tendenci startproject mysite
+  # else
+  #   echo "Tendenci project already exists, skipping creation..."
+  # fi
   
   # Change to the project directory where manage.py is located
+  echo "Creating Tendenci project..."
+  tendenci startproject mysite
   cd /var/www/mysite
   
   # Create log directory
-  mkdir -p /var/log/mysite
-  
+  # mkdir -p /var/log/mysite
+  sudo mkdir /var/log/mysite
+  sudo chown -R tendenci: /var/www/
+  sudo chown -R tendenci: /var/www/mysite/media/ 
+
   # Copy juniper theme with proper permissions
   echo "Copying juniper theme..."
   mkdir -p /var/www/mysite/themes/juniper
@@ -49,7 +58,7 @@ if [ ! -f "/var/www/mysite/conf/settings.py" ]; then
   
   # Ensure conf directory exists
   echo "Creating conf directory if it doesn't exist..."
-  mkdir -p /var/www/mysite/conf
+  # mkdir -p /var/www/mysite/conf
   
   # Create settings file with environment variables
   cat > /var/www/mysite/conf/settings.py << EOF
@@ -127,7 +136,7 @@ EOF
   chmod -R 755 /var/www/mysite/media/
   chmod -R 755 /var/www/mysite/themes/
   chown -R tendenci: /var/log/mysite
-  
+  cd /var/www/mysite/
   # Initialize database following official documentation
   echo "Initializing database..."
   python manage.py migrate

@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgis/postgis:17-3.4
+    container_name: tendenci_db
+    environment:
+      POSTGRES_DB: tendenci
+      POSTGRES_USER: tendenci
+      POSTGRES_PASSWORD: tendenci
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    ports:
+      - "5432:5432"
+    networks:
+      - tendenci_network
+    restart: unless-stopped
+
+  setup:
+    build:
+      context: .
+      dockerfile: Dockerfile.setup
+    container_name: tendenci_setup
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_NAME=tendenci
+      - DB_USER=tendenci
+      - DB_PASS=tendenci
+      - SECRET_KEY=your-secret-key-here-change-in-production
+      - SITE_SETTINGS_KEY=your-site-settings-key-here-change-in-production
+      - DEBUG=True
+    volumes:
+      - tendenci_media:/var/www/mysite/media
+      - tendenci_themes:/var/www/mysite/themes
+      - tendenci_logs:/var/log/mysite
+      - tendenci_whoosh:/var/www/mysite/whoosh_index
+      - tendenci_static:/var/www/mysite/static
+    networks:
+      - tendenci_network
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tendenci_app
+    depends_on:
+      - db
+      - setup
+    environment:
+      - DB_HOST=db
+      - DB_NAME=tendenci
+      - DB_USER=tendenci
+      - DB_PASS=tendenci
+    volumes:
+      - tendenci_media:/var/www/mysite/media
+      - tendenci_themes:/var/www/mysite/themes
+      - tendenci_logs:/var/log/mysite
+      - tendenci_whoosh:/var/www/mysite/whoosh_index
+      - tendenci_static:/var/www/mysite/static
+    ports:
+      - "9900:9900"
+    networks:
+      - tendenci_network
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:latest
+    container_name: tendenci_nginx
+    depends_on:
+      - app
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - tendenci_media:/var/www/mysite/media
+      - tendenci_static:/var/www/mysite/static
+    networks:
+      - tendenci_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  tendenci_media:
+  tendenci_themes:
+  tendenci_logs:
+  tendenci_whoosh:
+  tendenci_static:
+
+networks:
+  tendenci_network:
+    driver: bridge

@@ -10,37 +10,41 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     curl \
     sudo \
+    git \
     && rm -rf /var/lib/apt/lists/*
-
-# Create directories with proper permissions
-RUN mkdir -p /srv/venv_tendenci && \
-    mkdir -p /var/www/ && \
-    mkdir -p /var/log/ && \
-    chmod -R 755 /var/www && \
-    chmod -R 755 /var/log
 
 # Upgrade pip and install dependencies
 RUN pip install --upgrade pip setuptools wheel
 
-# Install Tendenci
+# Install Tendenci (requires git for dependencies)
 RUN pip install tendenci --upgrade
 
-# Create a non-root user with sudo privileges
+# Create app directories
+RUN mkdir -p /srv/venv_tendenci /var/www/ /var/log/ && \
+    chmod -R 755 /var/www /var/log
+
+# Create a non-root user
 RUN useradd -m -u 1000 tendenci && \
     usermod -aG sudo tendenci && \
     echo "tendenci ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # Set ownership
-RUN chown -R tendenci: /var/www/ /var/log/ /srv/venv_tendenci
+RUN chown -R tendenci: /var/www /var/log /srv/venv_tendenci
 
 # Set working directory
-WORKDIR /var/www/
+WORKDIR /var/www
 
-# Expose port
-EXPOSE 9900
-
-# Switch to tendenci user
+# Switch to tendenci user before project creation
 USER tendenci
 
-# Command to run the application
+# Create Tendenci project
+RUN tendenci startproject mysite
+
+# Set working directory to the newly created site
+WORKDIR /var/www/mysite
+
+# Expose Django port
+EXPOSE 9900
+
+# Run server
 CMD ["python", "manage.py", "runserver", "0.0.0.0:9900"]

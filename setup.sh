@@ -97,7 +97,8 @@ fi
 chmod -R 755 media/ themes/
 
 # Run database setup commands
-if [ -f "manage.py" ]; then
+if [ -f "/var/www/mysite/manage.py" ]; then
+  cd /var/www/mysite
   echo "Applying migrations and setup commands..."
   python manage.py migrate
   python manage.py deploy

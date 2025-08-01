@@ -18,15 +18,20 @@ sudo chown -R tendenci: /var/www/
 if [ ! -f "/var/www/mysite/conf/settings.py" ]; then
   echo "First run detected. Setting up Tendenci..."
 
-  cd /var/www/
-
-  # Create Tendenci project only if it hasn't been created
-  if [ ! -f "/var/www/mysite/manage.py" ]; then
+  # Create Tendenci project if needed
+  if [ ! -d "/var/www/mysite" ]; then
     echo "Creating Tendenci project..."
+    cd /var/www/
     tendenci startproject mysite
+  elif [ -z "$(ls -A /var/www/mysite)" ]; then
+    echo "mysite directory exists but is empty. Creating Tendenci project..."
+    cd /var/www/
+    tendenci startproject mysite
+  else
+    echo "mysite directory already exists and is not empty. Skipping project creation."
   fi
 
-  # Handle nested manage.py if incorrectly placed
+  # Fix incorrect nesting if needed
   if [ -f "/var/www/mysite/mysite/manage.py" ]; then
     mv /var/www/mysite/mysite/manage.py /var/www/mysite/
   fi

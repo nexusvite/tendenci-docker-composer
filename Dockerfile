@@ -12,10 +12,12 @@ RUN apt-get update && apt-get install -y \
     sudo \
     && rm -rf /var/lib/apt/lists/*
 
-# Create directories
+# Create directories with proper permissions
 RUN mkdir -p /srv/venv_tendenci && \
     mkdir -p /var/www/mysite && \
-    mkdir -p /var/log/mysite
+    mkdir -p /var/log/mysite && \
+    chmod -R 755 /var/www && \
+    chmod -R 755 /var/log
 
 # Upgrade pip and install dependencies
 RUN pip install --upgrade pip setuptools wheel

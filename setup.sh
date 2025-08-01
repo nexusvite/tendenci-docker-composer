@@ -1,9 +1,6 @@
 #!/bin/bash
 set -e
 
-# Activate virtual environment
-# source /srv/venv_tendenci/bin/activate
-
 echo "Starting Tendenci setup..."
 
 # Wait for database to be ready
@@ -13,20 +10,33 @@ until pg_isready -h $DB_HOST -U $DB_USER; do
   sleep 2
 done
 
-# Check if this is the first run
+# Check if this is the first run by checking for settings.py
 if [ ! -f "/var/www/mysite/conf/settings.py" ]; then
   echo "First run detected. Setting up Tendenci..."
   
-  # Create Tendenci project
-  tendenci startproject mysite
+  # Create Tendenci project only if mysite directory doesn't exist or is empty
+  if [ ! -d "/var/www/mysite/mysite" ] || [ -z "$(ls -A /var/www/mysite/mysite)" ]; then
+    echo "Creating Tendenci project..."
+    tendenci startproject mysite
+  else
+    echo "Tendenci project already exists, skipping creation..."
+  fi
+  
   cd /var/www/mysite
   
   # Create log directory
   mkdir -p /var/log/mysite
   
-  # Copy juniper theme
+  # Copy juniper theme with proper permissions
+  echo "Copying juniper theme..."
   mkdir -p /var/www/mysite/themes/juniper
-  cp -r /srv/venv_tendenci/lib/python*/site-packages/tendenci/themes/juniper/* /var/www/mysite/themes/juniper/
+  # Find the correct path to the tendenci package
+  TENDENCI_PATH=$(python -c "import tendenci; import os; print(os.path.dirname(tendenci.__file__))")
+  if [ -d "$TENDENCI_PATH/themes/juniper" ]; then
+    cp -r "$TENDENCI_PATH/themes/juniper"/* /var/www/mysite/themes/juniper/
+  else
+    echo "Warning: Could not find juniper theme in $TENDENCI_PATH/themes/"
+  fi
   
   # Create settings file with environment variables
   cat > /var/www/mysite/conf/settings.py << EOF
@@ -100,7 +110,9 @@ HAYSTACK_CONNECTIONS = {
 EOF
 
   # Set permissions
-  chmod -R -x+X /var/www/mysite/media/
+  echo "Setting permissions..."
+  chmod -R 755 /var/www/mysite/media/
+  chmod -R 755 /var/www/mysite/themes/
   chown -R tendenci: /var/log/mysite
   
   # Initialize database
@@ -112,7 +124,7 @@ EOF
   python manage.py rebuild_index --noinput
   
   # Set site URL
-  python manage.py set_setting site global siteurl 'http://localhost:8080'
+  python manage.py set_setting site global siteurl 'http://localhost:8082'
   
   echo "Tendenci setup completed!"
 else

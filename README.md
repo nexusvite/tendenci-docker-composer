@@ -22,7 +22,7 @@ This setup includes:
 ┌─────────────┐    ┌──────────────┐    ┌──────────────┐
 │   Nginx     │    │  Tendenci    │    │  PostgreSQL  │
 │  Container  │◄──►│   App        │◄──►│   Database   │
-│ (Port 8080) │    │ (Port 9900)  │    │ (Port 5432)  │
+│ (Port 8082) │    │ (Port 9900)  │    │ (Port 5432)  │
 └─────────────┘    └──────────────┘    └──────────────┘
                          │
                          ▼
@@ -43,7 +43,7 @@ docker-compose up -d
 ```
 
 4. Wait for the services to start (this may take a few minutes on the first run as the application initializes)
-5. Access Tendenci through Nginx at http://localhost:8080
+5. Access Tendenci through Nginx at http://localhost:8082
 
 ## First-time Setup
 

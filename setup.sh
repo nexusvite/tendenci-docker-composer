@@ -21,9 +21,63 @@ sudo mkdir -p /var/log/mysite
 sudo chown -R tendenci: /var/log/mysite
 sudo chown -R tendenci: /var/www/mysite/media/
 
-# ✅ Update DB config inside existing settings.py (if needed)
+# ✅ Create or update settings.py with DB config
 SETTINGS_FILE="/var/www/mysite/conf/settings.py"
-if [ -f "$SETTINGS_FILE" ]; then
+if [ ! -f "$SETTINGS_FILE" ]; then
+  echo "Creating settings.py..."
+  mkdir -p /var/www/mysite/conf
+  
+  cat > "$SETTINGS_FILE" << EOF
+# Django settings for Tendenci project
+import os
+from tendenci.settings import *
+
+# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.environ.get('SECRET_KEY', 'your-secret-key-here-change-in-production')
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+
+ALLOWED_HOSTS = ['*']
+
+# Database
+# https://docs.djangoproject.com/en/3.2/ref/settings/#databases
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'tendenci'),
+        'USER': os.environ.get('DB_USER', 'tendenci'),
+        'PASSWORD': os.environ.get('DB_PASS', 'tendenci'),
+        'HOST': os.environ.get('DB_HOST', 'db'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
+    }
+}
+
+# Site Settings Key for Tendenci
+SITE_SETTINGS_KEY = os.environ.get('SITE_SETTINGS_KEY', 'your-site-settings-key-here-change-in-production')
+
+# Media files
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
+
+# Static files
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_URL = '/static/'
+
+# Whoosh search index
+HAYSTACK_CONNECTIONS = {
+    'default': {
+        'ENGINE': 'haystack.backends.whoosh_backend.WhooshEngine',
+        'PATH': os.path.join(BASE_DIR, 'whoosh_index'),
+    },
+}
+
+EOF
+else
   echo "Updating database config in settings.py..."
 
   # Replace or insert DATABASES config block using sed
@@ -42,9 +96,6 @@ DATABASES = {
     }
 }
 EOF
-else
-  echo "ERROR: settings.py not found at $SETTINGS_FILE"
-  exit 1
 fi
 
 # Copy Juniper theme if not already present

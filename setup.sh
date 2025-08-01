@@ -16,8 +16,11 @@ sudo chown -R tendenci: /var/www/mysite
 sudo chown -R tendenci: /var/log/mysite
 
 # Check if this is the first run by checking for settings.py
-if [ ! -f "/var/www/mysite/mysite/conf/settings.py" ]; then
+if [ ! -f "/var/www/mysite/conf/settings.py" ]; then
   echo "First run detected. Setting up Tendenci..."
+  
+  # Change to the correct directory
+  cd /var/www/mysite
   
   # Create Tendenci project only if mysite directory doesn't exist or is empty
   if [ ! -d "/var/www/mysite/mysite" ] || [ -z "$(ls -A /var/www/mysite/mysite)" ]; then
@@ -28,28 +31,28 @@ if [ ! -f "/var/www/mysite/mysite/conf/settings.py" ]; then
   fi
   
   # Change to the project directory where manage.py is located
-  cd /var/www/mysite/mysite
+  cd /var/www/mysite
   
   # Create log directory
   mkdir -p /var/log/mysite
   
   # Copy juniper theme with proper permissions
   echo "Copying juniper theme..."
-  mkdir -p /var/www/mysite/mysite/themes/juniper
+  mkdir -p /var/www/mysite/themes/juniper
   # Find the correct path to the tendenci package
   TENDENCI_PATH=$(python -c "import tendenci; import os; print(os.path.dirname(tendenci.__file__))")
   if [ -d "$TENDENCI_PATH/themes/juniper" ]; then
-    cp -r "$TENDENCI_PATH/themes/juniper"/* /var/www/mysite/mysite/themes/juniper/
+    cp -r "$TENDENCI_PATH/themes/juniper"/* /var/www/mysite/themes/juniper/
   else
     echo "Warning: Could not find juniper theme in $TENDENCI_PATH/themes/"
   fi
   
   # Ensure conf directory exists
   echo "Creating conf directory if it doesn't exist..."
-  mkdir -p /var/www/mysite/mysite/conf
+  mkdir -p /var/www/mysite/conf
   
   # Create settings file with environment variables
-  cat > /var/www/mysite/mysite/conf/settings.py << EOF
+  cat > /var/www/mysite/conf/settings.py << EOF
 import os
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -100,34 +103,34 @@ LOGGING = {
 }
 
 # Media files
-MEDIA_ROOT = '/var/www/mysite/mysite/media/'
+MEDIA_ROOT = '/var/www/mysite/media/'
 MEDIA_URL = '/media/'
 
 # Static files
-STATIC_ROOT = '/var/www/mysite/mysite/static/'
+STATIC_ROOT = '/var/www/mysite/static/'
 STATIC_URL = '/static/'
 
 # Theme directory
-THEMES_DIR = '/var/www/mysite/mysite/themes/'
+THEMES_DIR = '/var/www/mysite/themes/'
 
 # Whoosh index
 HAYSTACK_CONNECTIONS = {
     'default': {
         'ENGINE': 'haystack.backends.whoosh_backend.WhooshEngine',
-        'PATH': '/var/www/mysite/mysite/whoosh_index',
+        'PATH': '/var/www/mysite/whoosh_index',
     },
 }
 EOF
 
   # Set permissions
   echo "Setting permissions..."
-  chmod -R 755 /var/www/mysite/mysite/media/
-  chmod -R 755 /var/www/mysite/mysite/themes/
+  chmod -R 755 /var/www/mysite/media/
+  chmod -R 755 /var/www/mysite/themes/
   chown -R tendenci: /var/log/mysite
   
-  # Initialize database
+  # Initialize database following official documentation
   echo "Initializing database..."
-  python manage.py initial_migrate
+  python manage.py migrate
   python manage.py deploy
   python manage.py load_tendenci_defaults
   python manage.py update_dashboard_stats
@@ -139,7 +142,7 @@ EOF
   echo "Tendenci setup completed!"
 else
   echo "Tendenci already set up. Running any pending migrations..."
-  cd /var/www/mysite/mysite
+  cd /var/www/mysite
   python manage.py migrate
   python manage.py deploy
   echo "Updates completed!"

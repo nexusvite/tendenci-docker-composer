@@ -10,6 +10,11 @@ until pg_isready -h $DB_HOST -U $DB_USER; do
   sleep 2
 done
 
+# Fix permissions on mounted volumes
+echo "Fixing permissions on mounted volumes..."
+sudo chown -R tendenci: /var/www/mysite
+sudo chown -R tendenci: /var/log/mysite
+
 # Check if this is the first run by checking for settings.py
 if [ ! -f "/var/www/mysite/conf/settings.py" ]; then
   echo "First run detected. Setting up Tendenci..."

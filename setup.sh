@@ -19,20 +19,20 @@ if [ ! -f "/var/www/mysite/conf/settings.py" ]; then
   echo "First run detected. Setting up Tendenci..."
 
   # Create Tendenci project if needed
-  if [ ! -d "/var/www/mysite" ]; then
+  if [ -f "/var/www/mysite/manage.py" ]; then
     echo "Creating Tendenci project..."
     cd /var/www/
     tendenci startproject mysite
   elif [ -z "$(ls -A /var/www/mysite)" ]; then
     echo "mysite directory exists but is empty. Creating Tendenci project..."
-    cd /var/www/
+    # cd /var/www/
     tendenci startproject mysite
   else
     echo "mysite directory already exists and is not empty. Skipping project creation."
   fi
 
   # Rescue nested manage.py if needed
-  if [ -f "/var/www/mysite/mysite/manage.py" ]; then
+  if [ -f "/var/www/mysite/manage.py" ]; then
     echo "Fixing nested manage.py..."
     mv /var/www/mysite/mysite/manage.py /var/www/mysite/
   fi
